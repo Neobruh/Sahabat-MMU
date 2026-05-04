@@ -36,6 +36,61 @@ def home():
         <a href="/register">Register</a>
     """)
 
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    
+    result = []
+    for user in users:
+        result.append({
+            "id": user.id,
+            "username": user.username
+        })
+
+    return result
+
+@app.route('/users/<int:id>', methods=['GET'])
+def get_user(id):
+    user = User.query.get(id)
+
+    if not user:
+        return {"message": "User not found"}, 404
+
+    return {
+        "id": user.id,
+        "username": user.username
+    }
+
+@app.route('/users/<int:id>', methods=['PUT'])
+def update_user(id):
+    user = User.query.get(id)
+
+    if not user:
+        return {"message": "User not found"}, 404
+
+    data = request.get_json()
+
+    user.username = data.get("username", user.username)
+
+    if "password" in data:
+        user.password = generate_password_hash(data["password"])
+
+    db.session.commit()
+
+    return {"message": "User updated"}
+
+@app.route('/users/<int:id>', methods=['DELETE'])
+def delete_user(id):
+    user = User.query.get(id)
+
+    if not user:
+        return {"message": "User not found"}, 404
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return {"message": "User deleted"}
+
 # Register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
