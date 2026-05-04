@@ -2,6 +2,11 @@ from flask import Flask, render_template_string, request, redirect, url_for, ses
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+import re
+
+def is_mmu_email(email):
+    return bool(re.match(r"^[a-zA-Z0-9._%+-]+@mmu\.edu\.my$", email))   
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret123'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -96,7 +101,12 @@ def delete_user(id):
 def register():
     if request.method == 'POST':
         username = request.form['username']
+        email = request.form.get('email')
         password = generate_password_hash(request.form['password'])
+
+        # MMU email check
+        if not is_mmu_email(email):
+            return "Please use your official MMU student email."
 
         user = User(username=username, password=password)
         db.session.add(user)
@@ -108,6 +118,7 @@ def register():
         <h2>Register</h2>
         <form method="POST">
             <input name="username" placeholder="Username" required><br>
+            <input name="email" placeholder="MMU Email" required><br>
             <input name="password" type="password" placeholder="Password" required><br>
             <button type="submit">Register</button>
         </form>
@@ -142,6 +153,14 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('home'))
+
+# Discovery Page
+@app.route('/discovery')
+def discovery():
+    return render_template_string("""
+        <h2>Discovery Page</h2>
+        <p>Find other MMU students here.</p>
+    """)
 
 # -----------------------
 # Run App
