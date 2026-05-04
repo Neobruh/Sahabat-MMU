@@ -1,8 +1,9 @@
 from flask import Flask, render_template_string, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+from functools import wraps
+from db import db, User   
 
-from db import db, User   # 👈 import database from db.py
 
 # -----------------------
 # App setup
@@ -18,7 +19,18 @@ db.init_app(app)
 # Helper function
 # -----------------------
 def is_mmu_email(email):
-    return bool(re.match(r"^[a-zA-Z0-9._%+-]+@mmu\.edu\.my$", email))
+    if not email:
+        return False
+    email = email.strip().lower()
+    return email.endswith("@student.mmu.edu.my")
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return wrapper
 
 # -----------------------
 # Routes
@@ -85,6 +97,7 @@ def delete_user(id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    
     if request.method == 'POST':
         username = request.form['username']
         email = request.form.get('email')
@@ -92,6 +105,13 @@ def register():
 
         if not is_mmu_email(email):
             return "Please use your official MMU student email."
+        
+        if User.query.filter_by(username=username).first():
+            return "Username already exists."
+        
+        if User.query.filter_by(email=email).first():
+            return "Email already registered."
+    
 
         user = User(username=username, email=email, password=password)
         db.session.add(user)
@@ -136,6 +156,7 @@ def login():
         </form>
     """)
 
+
 # -----------------------
 # LOGOUT
 # -----------------------
@@ -150,6 +171,7 @@ def logout():
 # -----------------------
 
 @app.route('/discovery')
+@login_required
 def discovery():
     return render_template_string("""
         <h2>Discovery Page</h2>
