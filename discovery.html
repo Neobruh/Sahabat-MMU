@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <nav class="col-md-3 p-4" style="background: var(--card); min-height: 100vh; border-right: 1px solid #2a203b;">
+        <h3 class="fw-bold mb-4" style="color: var(--neon);">Sahabat Filters</h3>
+        <form action="{{ url_for('discovery') }}" method="GET">
+            <label class="small text-muted">Subject / Course</label>
+            <select name="major" class="form-select mb-3">
+                <option value="All">All Subjects</option>
+                <option value="Creative Multimedia">Creative Multimedia</option>
+                <option value="Computer Science">Computer Science</option>
+            </select>
+            <label class="small text-muted">Campus Location</label>
+            <select name="campus" class="form-select mb-4">
+                <option value="All">All Campuses</option>
+                <option value="Cyberjaya">Cyberjaya</option>
+                <option value="Melaka">Melaka</option>
+            </select>
+            <button type="submit" class="btn btn-neon w-100 rounded-pill">Apply Filters</button>
+        </form>
+    </nav>
+    <main class="col-md-9 p-4">
+        <h2 class="mb-4">Discovery Dashboard</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for student in students %}
+            <div class="col">
+                <div class="card profile-card h-100 p-3">
+                    <div style="height: 150px; background: #2a203b; border-radius: 8px;" class="mb-3 d-flex align-items-center justify-content-center text-muted">PHOTO</div>
+                    <h5 class="fw-bold text-light mb-1">{{ student.username }}</h5>
+                    <p class="text-muted small mb-2">{{ student.major }} • {{ student.campus }}</p>
+                    <p class="small text-secondary">{{ student.bio }}</p>
+                    <button class="btn btn-neon w-100 rounded-pill mt-auto">View Profile</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+{% endblock %}
