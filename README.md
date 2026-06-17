@@ -1,121 +1,104 @@
-# Sahabat
+# Sahabat-MMU
 
-A Flask-based Facebook/Tinder hybrid web app for university students.
+A social platform with real-time messaging, built with Flask and Socket.IO.
 
-## Features
-- Login (`/login`) and Sign Up (`/signup`)
-- Topbar navigation: Main Page, Club, Discovery
-- Main Page / Club — post feeds with profile pictures, images, likes, and comments
-- Click any profile picture or username to view that user's profile
-- Top-right dropdown menu: View Profile, Customize Profile, Settings, Toggle Dark Mode, Sign Out
-- Dark mode (persisted via browser localStorage)
-- Discovery — swipe-style Like/Pass with a basic similarity score algorithm
-- SQLite database (via Flask-SQLAlchemy) for users and posts
+---
+
+## Prerequisites
+
+- Python 3.10 or higher → https://www.python.org/downloads/
+- Git → https://git-scm.com/downloads
+
+---
 
 ## Setup
-1. Create a virtual environment (optional but recommended):
-   ```
-   python -m venv venv
-   venv\Scripts\activate      (Windows)
-   source venv/bin/activate   (Mac/Linux)
-   ```
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-3. Run the app:
-   ```
-   python app.py
-   ```
-   On first run, this creates `instance/sahabat.db` and seeds demo data.
-4. Open http://127.0.0.1:5000 in your browser.
 
-## Demo login
-- Username: `demo`
-- Password: `password123`
+### 1. Clone the repository
 
-(Other seeded accounts: `Aisyah`, `Daniel`, `Photography Club`, `Debate Society` — all use password `password123`.)
-
-## File Structure
-```
-sahabat/
-├── app.py
-├── requirements.txt
-├── README.md
-├── instance/
-│   └── sahabat.db          # created automatically on first run
-├── static/
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   └── main.js          # dropdown + dark mode logic
-│   └── images/
-│       ├── logo-placeholder.png
-│       ├── profile-placeholder.png
-│       └── post-placeholder.jpg
-└── templates/
-    ├── base.html             # topbar, dropdown, dark mode hook
-    ├── login.html
-    ├── signup.html
-    ├── main.html
-    ├── club.html
-    ├── discovery.html
-    ├── profile.html          # view a user's profile + their posts
-    ├── edit_profile.html      # customize bio, interests, profile pic
-    ├── settings.html          # change password (placeholder for more)
-    └── _post_card.html        # shared post card (pic, image, like, comments)
+```bash
+git clone https://github.com/YOUR_USERNAME/Sahabat-MMU.git
+cd Sahabat-MMU
 ```
 
-## Database Schema (SQLite via SQLAlchemy)
+---
 
-```sql
--- users
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    bio TEXT DEFAULT '',
-    profile_pic TEXT DEFAULT '/static/images/profile-placeholder.png',
-    interests TEXT DEFAULT ''   -- comma-separated
-);
+### 2. Create a virtual environment
 
--- posts (used for both Main Page and Club posts via `type`)
-CREATE TABLE posts (
-    id INTEGER PRIMARY KEY,
-    type TEXT NOT NULL,           -- 'main' or 'club'
-    author_id INTEGER REFERENCES users(id),
-    author_name TEXT NOT NULL,
-    content TEXT NOT NULL,
-    image_url TEXT,
-    created_at DATETIME
-);
-
--- likes
-CREATE TABLE likes (
-    id INTEGER PRIMARY KEY,
-    post_id INTEGER REFERENCES posts(id),
-    username TEXT NOT NULL,
-    UNIQUE(post_id, username)
-);
-
--- comments
-CREATE TABLE comments (
-    id INTEGER PRIMARY KEY,
-    post_id INTEGER REFERENCES posts(id),
-    username TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME
-);
+```bash
+python -m venv venv
 ```
 
-## Notes / Placeholders
-- Passwords are hashed with Werkzeug's `generate_password_hash`/`check_password_hash`.
-- Profile pictures and post images are referenced by URL/path (text field) —
-  add a file upload route later to let users upload real images.
-- `DISCOVERY_PROFILES` and `calculate_similarity()` are still placeholders;
-  wire up real candidate users + matching against `interests` later.
-- Settings page only supports password change — extend with notification
-  preferences, privacy, account deletion, etc.
-- Dark mode preference is stored in the browser (`localStorage`), not the DB.
-- To reset the database, stop the server and delete `instance/sahabat.db`,
-  then restart — it will be recreated and reseeded.
+---
+
+### 3. Activate the virtual environment
+
+**Windows — Command Prompt (recommended):**
+```cmd
+venv\Scripts\activate.bat
+```
+
+**Windows — PowerShell** (if you get a security error, run this once as Administrator first):
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+Then:
+```powershell
+venv\Scripts\activate
+```
+
+**macOS / Linux:**
+```bash
+source venv/bin/activate
+```
+
+You'll know it's active when you see `(venv)` at the start of your terminal prompt.
+
+---
+
+### 4. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+---
+
+### 5. Run the app
+
+```bash
+python app.py
+```
+
+Then check the console for the link, example: `` * Running on http://127.0.0.1:5000 ``
+
+---
+
+## Troubleshooting
+
+**`venv\Scripts\activate` is blocked on PowerShell**
+Use `cmd.exe` instead and run `venv\Scripts\activate.bat`, or see step 3 above for the PowerShell fix.
+
+**`ModuleNotFoundError`**
+Make sure your virtual environment is activated (you should see `(venv)` in your prompt) before running `pip install` or `python app.py`.
+
+**Port 5000 already in use**
+Another app is using port 5000. Either stop that app, or run on a different port:
+```bash
+python app.py --port 5001
+```
+
+**WebSocket not connecting**
+Make sure `eventlet` installed correctly. You can verify with:
+```bash
+pip show eventlet
+```
+
+---
+
+## Tech stack
+
+- [Flask](https://flask.palletsprojects.com/) — web framework
+- [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/) — database ORM
+- [Flask-SocketIO](https://flask-socketio.readthedocs.io/) — real-time messaging
+- [Werkzeug](https://werkzeug.palletsprojects.com/) — password hashing and file uploads
+- [Socket.IO](https://socket.io/) — WebSocket client (browser)
