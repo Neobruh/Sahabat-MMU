@@ -1,0 +1,67 @@
+<div class="post-card{% if post.type == 'club' %} club-card{% endif %}" id="post-{{ post.id }}">
+    <div class="post-header">
+        <a href="{{ url_for('profile_page', username=post.author_name) }}">
+            <img src="{{ post.author.profile_pic or url_for('static', filename='images/profile-placeholder.png') }}"
+                 alt="{{ post.author_name }}" class="post-profile-pic">
+        </a>
+        <a href="{{ url_for('profile_page', username=post.author_name) }}" class="post-author-link">
+            <h3>{{ post.author_name }}</h3>
+        </a>
+        <div class="post-meta-actions">
+            <button class="report-btn" onclick="openReport({{ post.id }})">⚑ Report</button>
+            {% if current_user_obj and current_user_obj.is_admin %}
+            <button class="delete-btn" onclick="deletePost({{ post.id }})">🚫 Hide</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="post-content-link">
+        {{ post.content }}
+    </a>
+
+    {% if post.image_url %}
+    <img src="{{ post.image_url }}" alt="Post image" class="post-image">
+    {% endif %}
+
+    <div class="post-actions">
+        <button
+            class="like-toggle-btn {% if post.liked_by(username) %}liked{% endif %}"
+            data-post-id="{{ post.id }}"
+            onclick="toggleLike(this)">
+            ♥ <span class="like-count">{{ post.likes|length }}</span>
+            <span class="like-label">{% if post.liked_by(username) %}Liked{% else %}Like{% endif %}</span>
+        </button>
+    </div>
+
+    <div class="comments-section">
+        {% set comments_to_show = post.comments[:5] if not is_detail_page else post.comments %}
+        {% for comment in comments_to_show %}
+        <div class="comment">
+            <a href="{{ url_for('profile_page', username=comment.username) }}" class="comment-author">{{ comment.username }}</a>
+            <span class="comment-content">{{ comment.content }}</span>
+        </div>
+        {% endfor %}
+
+        {% if not is_detail_page and post.comments|length > 5 %}
+        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="view-all-comments">
+            View all {{ post.comments|length }} comments
+        </a>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('comment_post', post_id=post.id) }}" class="comment-form">
+            <input type="text" name="comment" placeholder="Add a comment…" required>
+            <button type="submit">Post</button>
+        </form>
+    </div>
+</div>
+
+<div class="report-modal" id="report-modal-{{ post.id }}">
+    <div class="report-modal-box">
+        <h3>Report Post</h3>
+        <textarea id="report-reason-{{ post.id }}" placeholder="What's wrong with this post?"></textarea>
+        <div class="report-modal-actions">
+            <button class="cancel-btn" onclick="closeReport({{ post.id }})">Cancel</button>
+            <button onclick="submitReport({{ post.id }})">Submit Report</button>
+        </div>
+    </div>
+</div>

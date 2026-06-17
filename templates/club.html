@@ -1,0 +1,59 @@
+    {% extends "base.html" %}
+    {% block title %}Sahabat — Clubs{% endblock %}
+
+    {% block content %}
+    <div class="page-heading">
+        <h1>Clubs</h1>
+        <p>Updates and announcements from university clubs</p>
+    </div>
+
+    {% if current_user_obj and current_user_obj.is_club %}
+    <div class="create-post-box">
+        <form method="POST" action="{{ url_for('create_club_post') }}" enctype="multipart/form-data">
+            <textarea name="content" placeholder="Share an update with your club members…" required></textarea>
+            <div class="create-post-actions">
+                <div class="upload-area" id="uploadArea">
+                    📎 Attach an image
+                    <input type="file" name="image" id="imageInput" accept="image/*">
+                </div>
+                <button type="submit">Post</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const imageInput = document.getElementById('imageInput');
+
+    imageInput.addEventListener('change', () => {
+        if (imageInput.files.length > 0) {
+            uploadArea.textContent = '✅ ' + imageInput.files[0].name;
+            uploadArea.classList.add('has-file');
+            uploadArea.appendChild(imageInput);
+        }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            imageInput.files = dt.files;
+            uploadArea.textContent = '✅ ' + file.name;
+            uploadArea.classList.add('has-file');
+            uploadArea.appendChild(imageInput);
+        }
+    });
+    </script>
+    {% endif %}
+
+    <div class="post-feed">
+        {% for post in posts %}
+            {% include "_post_card.html" %}
+        {% endfor %}
+    </div>
+    {% endblock %}

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sahabat{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if username %}
+    <div class="topbar">
+        <div class="logo">
+            <div class="logo-mark">S</div>
+            <span class="brand-name">Sahabat</span>
+        </div>
+        <nav class="nav-links">
+            <a href="{{ url_for('main_page') }}" class="{% if active_page == 'main' %}active{% endif %}">Feed</a>
+            <a href="{{ url_for('club_page') }}" class="{% if active_page == 'club' %}active{% endif %}">Clubs</a>
+            <a href="{{ url_for('discovery_page') }}" class="{% if active_page == 'discovery' %}active{% endif %}">Discover</a>
+        </nav>
+        <div class="search-wrapper">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    id="globalSearch"
+                    class="search-input"
+                    placeholder="Search clubs & users…"
+                    autocomplete="off"
+                    aria-label="Search"
+                >
+            </div>
+            <div class="search-dropdown" id="searchDropdown" style="display:none">
+                <div id="searchResults"></div>
+            </div>
+        </div>
+
+        <div class="user-section">
+            <!-- Notification Bell -->
+            <a href="{{ url_for('notifications') }}" class="notif-bell" title="Notifications">
+                🔔
+                <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+            </a>
+
+            <div class="dropdown">
+                <button class="profile-btn" onclick="toggleDropdown()">
+                    <img src="{{ current_user_obj.profile_pic if current_user_obj else url_for('static', filename='images/profile-placeholder.png') }}"
+                         alt="Profile" class="topbar-profile-pic">
+                    <span>{{ username }}</span>
+                    <span class="dropdown-arrow">▾</span>
+                </button>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('profile_page', username=username) }}">View Profile</a>
+                    <a href="{{ url_for('edit_profile') }}">Edit Profile</a>
+                    <a href="{{ url_for('settings_page') }}">Settings</a>
+                    {% if current_user_obj and current_user_obj.is_admin %}
+                    <a href="{{ url_for('admin_panel') }}">Admin Panel</a>
+                    {% endif %}
+                    <button onclick="toggleDarkMode()" class="dropdown-item-btn">Toggle Theme</button>
+                    <a href="{{ url_for('logout') }}" class="logout-link">Sign Out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="content {% if active_page == 'main' %}content-feed{% endif %}">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function toggleDropdown() {
+            document.getElementById('userDropdown').classList.toggle('open');
+        }
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown && !e.target.closest('.dropdown')) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('light');
+            localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+        }
+
+        function toggleLike(btn) {
+            const postId = btn.dataset.postId;
+            fetch(`/post/${postId}/like`, { method: "POST" })
+                .then(res => res.json())
+                .then(data => {
+                    const countEl = btn.querySelector('.like-count');
+                    const labelEl = btn.querySelector('.like-label');
+                    countEl.textContent = data.count;
+                    labelEl.textContent = data.liked ? 'Liked' : 'Like';
+                    btn.classList.toggle('liked', data.liked);
+                });
+        }
+
+        function openReport(postId) {
+            document.getElementById('report-modal-' + postId).classList.add('show');
+        }
+
+        function closeReport(postId) {
+            document.getElementById('report-modal-' + postId).classList.remove('show');
+        }
+
+        function submitReport(postId) {
+            const reason = document.getElementById('report-reason-' + postId).value.trim();
+            const form = new FormData();
+            form.append('reason', reason || 'No reason given');
+            fetch(`/post/${postId}/report`, { method: 'POST', body: form })
+                .then(r => r.json())
+                .then(() => {
+                    closeReport(postId);
+                    alert('Report submitted. Thank you!');
+                });
+        }
+
+        function deletePost(postId) {
+            if (!confirm('Hide this post permanently?')) return;
+            fetch(`/post/${postId}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('post-' + postId).remove();
+                    }
+                });
+        }
+
+        // Notification badge — polls every 30 seconds
+        function refreshNotifBadge() {
+            fetch('/notifications/count')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('notifBadge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                    }
+                })
+                .catch(() => {});
+        }
+
+        {% if username %}
+        refreshNotifBadge();
+        setInterval(refreshNotifBadge, 30000);
+        {% endif %}
+    </script>
+
+    {% block scripts %}{% endblock %}
+
+    <script>
+    (function () {
+        const input    = document.getElementById('globalSearch');
+        const dropdown = document.getElementById('searchDropdown');
+        const results  = document.getElementById('searchResults');
+        if (!input) return;
+
+        let debounceTimer = null;
+
+        input.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const q = this.value.trim();
+            if (q.length < 2) { hideDropdown(); return; }
+            debounceTimer = setTimeout(() => fetchResults(q), 220);
+        });
+
+        input.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2) dropdown.style.display = 'block';
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-wrapper')) hideDropdown();
+        });
+
+        function hideDropdown() {
+            dropdown.style.display = 'none';
+        }
+
+        function fetchResults(q) {
+            fetch(`/search/api?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => renderResults(data, q))
+                .catch(() => hideDropdown());
+        }
+
+        function renderResults(data, q) {
+            const total = data.clubs.length + data.users.length;
+            if (total === 0) {
+                results.innerHTML = `<div class="search-empty">No results for "<strong>${escHtml(q)}</strong>"</div>`;
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+
+            if (data.clubs.length) {
+                html += `<div class="search-section-label">Clubs</div>`;
+                data.clubs.forEach(c => {
+                    html += `
+                    <a class="search-result-item" href="/profile/${encodeURIComponent(c.username)}">
+                        <img src="${escHtml(c.profile_pic)}" alt="" class="search-avatar">
+                        <div class="search-item-info">
+                            <span class="search-item-name">${highlight(c.username, q)}</span>
+                            ${c.bio ? `<span class="search-item-sub">${escHtml(c.bio.slice(0,40))}${c.bio.length>40?'…':''}</span>` : ''}
+                        </div>
+                        <span class="search-badge club">Club</span>
+                    </a>`;
+                });
+            }
+
+            if (data.users.length) {
+                html += `<div class="search-section-label">Users</div>`;
+                data.users.forEach(u => {
+                    html += `
+                    <a class="search-result-item" href="/profile/${encodeURIComponent(u.username)}">
+                        <img src="${escHtml(u.profile_pic)}" alt="" class="search-avatar">
+                        <div class="search-item-info">
+                            <span class="search-item-name">${highlight(u.username, q)}</span>
+                            ${u.faculty ? `<span class="search-item-sub">${escHtml(u.faculty)}</span>` : ''}
+                        </div>
+                    </a>`;
+                });
+            }
+
+            results.innerHTML = html;
+            dropdown.style.display = 'block';
+        }
+
+        function highlight(text, q) {
+            const safe = escHtml(text);
+            const safeQ = escHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return safe.replace(new RegExp(`(${safeQ})`, 'gi'), '<mark>$1</mark>');
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    })();
+    </script>
+    {% include "_messenger.html" %}
+</body>
+</html>

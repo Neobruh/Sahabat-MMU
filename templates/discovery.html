@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Discover{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Discover</h1>
+    <p>Find people who share your interests</p>
+</div>
+
+{% if profile %}
+<div class="discovery-card">
+    <img src="{{ profile.profile_pic or url_for('static', filename='images/profile-placeholder.png') }}"
+         alt="{{ profile.username }}" class="discovery-profile-pic">
+    <h2>{{ profile.username }}</h2>
+    <p class="similarity">{{ similarity }}% match</p>
+
+    {% if profile.faculty %}
+    <p class="discovery-meta">🏫 {{ profile.faculty }}</p>
+    {% endif %}
+
+    {% if profile.clubs %}
+    <p class="discovery-meta">🎉 {{ profile.clubs | map(attribute='username') | join(', ') }}</p>
+    {% endif %}
+
+    {% if profile.interest_list() %}
+    <p class="interests">🎧 {{ profile.interest_list() | join(', ') }}</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('discovery_action') }}" class="swipe-buttons">
+        <input type="hidden" name="target_username" value="{{ profile.username }}">
+        <button type="submit" name="action" value="pass" class="pass-btn">✗ Pass</button>
+        <button type="submit" name="action" value="like" class="like-btn">♥ Connect</button>
+    </form>
+</div>
+{% else %}
+<div class="discovery-card">
+    <p class="placeholder-text">You've gone through everyone for now. Check back later!</p>
+</div>
+{% endif %}
+{% endblock %}

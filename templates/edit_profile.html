@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Edit Profile{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Edit Profile</h1>
+    <p>Update how others see you on Sahabat</p>
+</div>
+
+<form method="POST" action="{{ url_for('edit_profile') }}" class="settings-form" enctype="multipart/form-data">
+    <label for="bio">Bio</label>
+    <textarea id="bio" name="bio" rows="3" placeholder="Tell others about yourself…">{{ user.bio }}</textarea>
+
+    <label for="faculty">Faculty</label>
+    <select id="faculty" name="faculty" class="form-select">
+        <option value="">— Select your faculty —</option>
+        {% for faculty in faculty_courses %}
+        <option value="{{ faculty }}" {% if user.faculty == faculty %}selected{% endif %}>{{ faculty }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="course">Course</label>
+    <select id="course" name="course" class="form-select">
+        <option value="">— Select your course —</option>
+        {% for faculty, courses in faculty_courses.items() %}
+            {% for c in courses %}
+            <option value="{{ c }}"
+                    data-faculty="{{ faculty }}"
+                    {% if user.course == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        {% endfor %}
+    </select>
+
+    <label>Interests</label>
+    <div class="interest-picker">
+        {% set selected = user.interest_list() | map('lower') | list %}
+        {% for tag in predefined_interests %}
+        <label class="interest-chip {% if tag.lower() in selected %}selected{% endif %}">
+            <input type="checkbox" name="interests" value="{{ tag }}"
+                   {% if tag.lower() in selected %}checked{% endif %}>
+            {{ tag }}
+        </label>
+        {% endfor %}
+    </div>
+    <p class="form-hint">Pick as many as you like.</p>
+
+    <label>Profile Photo</label>
+    <div class="current-pic-preview">
+        <img id="picPreview" src="{{ user.profile_pic }}" alt="Current profile picture">
+    </div>
+    <div class="upload-area" id="uploadArea">
+        📎 Click or drag a photo here
+        <input type="file" name="profile_pic_file" id="profilePicInput" accept="image/*">
+    </div>
+    <p class="form-hint">Leave empty to keep your current photo.</p>
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<script>
+// ── Faculty → Course filtering ──────────────────────────────────────────────
+const facultySelect = document.getElementById('faculty');
+const courseSelect  = document.getElementById('course');
+const allOptions    = Array.from(courseSelect.querySelectorAll('option[data-faculty]'));
+
+function filterCourses() {
+    const chosen = facultySelect.value;
+    allOptions.forEach(opt => {
+        const belongs = !chosen || opt.dataset.faculty === chosen;
+        opt.hidden   = !belongs;
+        opt.disabled = !belongs;
+    });
+    // Reset course if current selection no longer belongs to faculty
+    const current = courseSelect.querySelector('option:checked');
+    if (current && current.dataset.faculty && current.dataset.faculty !== chosen) {
+        courseSelect.value = '';
+    }
+}
+
+facultySelect.addEventListener('change', filterCourses);
+filterCourses(); // run on page load to hide courses from other faculties
+
+// ── Interest chips ──────────────────────────────────────────────────────────
+document.querySelectorAll('.interest-chip input').forEach(cb => {
+    cb.addEventListener('change', () => {
+        cb.closest('.interest-chip').classList.toggle('selected', cb.checked);
+    });
+});
+
+// ── Profile photo upload ────────────────────────────────────────────────────
+const input      = document.getElementById('profilePicInput');
+const uploadArea = document.getElementById('uploadArea');
+const preview    = document.getElementById('picPreview');
+
+input.addEventListener('change', () => {
+    if (input.files.length > 0) {
+        const file = input.files[0];
+        uploadArea.textContent = '✅ ' + file.name;
+        uploadArea.classList.add('has-file');
+        uploadArea.appendChild(input);
+        preview.src = URL.createObjectURL(file);
+    }
+});
+
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        uploadArea.textContent = '✅ ' + file.name;
+        uploadArea.classList.add('has-file');
+        uploadArea.appendChild(input);
+        preview.src = URL.createObjectURL(file);
+    }
+});
+</script>
+{% endblock %}

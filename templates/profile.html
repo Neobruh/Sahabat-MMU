@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — {{ profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <img src="{{ profile_user.profile_pic or url_for('static', filename='images/profile-placeholder.png') }}"
+         alt="{{ profile_user.username }}" class="profile-page-pic">
+
+    <div class="profile-info">
+        <h1>{{ profile_user.username }}</h1>
+
+        {% if profile_user.bio %}
+        <p class="profile-bio">{{ profile_user.bio }}</p>
+        {% else %}
+        <p class="profile-bio placeholder-text">No bio yet.</p>
+        {% endif %}
+
+        {% if profile_user.faculty or profile_user.course %}
+        <div class="profile-academic">
+            {% if profile_user.faculty %}
+            <span class="academic-tag">🏫 {{ profile_user.faculty }}</span>
+            {% endif %}
+            {% if profile_user.course %}
+            <span class="academic-tag">📚 {{ profile_user.course }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if profile_user.interest_list() %}
+        <div class="interest-tags">
+            {% for interest in profile_user.interest_list() %}
+            <span class="interest-tag">{{ interest }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if profile_user.username == username %}
+            {% if not profile_user.is_club and profile_user.clubs %}
+            <div class="profile-clubs">
+                <h3 class="profile-clubs-label">🎉 Clubs</h3>
+                <div class="club-list">
+                    {% for club in profile_user.clubs %}
+                    <div class="club-item">
+                        <a href="{{ url_for('profile_page', username=club.username) }}" class="club-item-info">
+                            <img src="{{ club.profile_pic or url_for('static', filename='images/profile-placeholder.png') }}"
+                                 alt="{{ club.username }}" class="club-item-pic">
+                            <span class="club-item-name">{{ club.username }}</span>
+                        </a>
+                        <button
+                            class="club-join-btn joined"
+                            data-club-id="{{ club.id }}"
+                            onclick="toggleClub(this)">
+                            Leave
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% elif profile_user.is_club %}
+            <div class="profile-clubs">
+                <h3 class="profile-clubs-label">🎉 Membership</h3>
+                <div class="club-list">
+                    <div class="club-item">
+                        <span class="club-item-info">
+                            <span class="club-item-name">{{ profile_user.username }}</span>
+                        </span>
+                        <button
+                            class="club-join-btn {% if profile_user in viewer.clubs %}joined{% endif %}"
+                            data-club-id="{{ profile_user.id }}"
+                            onclick="toggleClub(this)">
+                            {{ 'Leave' if profile_user in viewer.clubs else 'Join' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# ── Friend button (only shown on other people's profiles) ── #}
+        {% if friend_status == "self" %}
+            <a href="{{ url_for('edit_profile') }}" class="edit-profile-btn">Edit Profile</a>
+
+        {% elif friend_status == "friends" %}
+            <button class="friend-btn unfriend"
+                    onmouseenter="this.textContent='❌ Unfriend'"
+                    onmouseleave="this.textContent='✅ Friends'"
+                    onclick="unfriend('{{ profile_user.username }}', this)">
+                ✅ Friends
+            </button>
+
+        {% elif friend_status == "pending_sent" %}
+            <button class="friend-btn pending" disabled>⏳ Request Sent</button>
+
+        {% elif friend_status == "pending_received" %}
+            <div class="friend-actions">
+                <span class="friend-btn pending">📩 Wants to be your friend</span>
+                <button class="friend-btn accept"
+                        onclick="respondRequest({{ incoming_request.id }}, 'accept', this)">
+                    Accept
+                </button>
+                <button class="friend-btn decline"
+                        onclick="respondRequest({{ incoming_request.id }}, 'decline', this)">
+                    Decline
+                </button>
+            </div>
+
+        {% elif friend_status == "none" %}
+            <button class="friend-btn add"
+                    onclick="sendFriendRequest('{{ profile_user.username }}', this)">
+                ➕ Add Friend
+            </button>
+        {% endif %}
+
+    </div>
+</div>
+
+<h2 class="posts-section-label">Posts</h2>
+
+<div class="post-feed">
+    {% for post in posts %}
+        {% include "_post_card.html" %}
+    {% else %}
+    <p class="placeholder-text">No posts yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleClub(btn) {
+    const clubId = btn.dataset.clubId;
+    btn.disabled = true;
+    fetch(`/club/join/${clubId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = data.joined ? 'Leave' : 'Join';
+            btn.classList.toggle('joined', data.joined);
+            btn.disabled = false;
+        })
+        .catch(() => { btn.disabled = false; });
+}
+
+function sendFriendRequest(username, btn) {
+    btn.disabled = true;
+    fetch(`/friend-request/send/${username}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "pending") {
+                btn.textContent = "⏳ Request Sent";
+                btn.classList.remove("add");
+                btn.classList.add("pending");
+            } else if (data.status === "friends") {
+                btn.textContent = "✅ Friends";
+                btn.classList.remove("add");
+                btn.classList.add("friends");
+            } else {
+                btn.disabled = false;
+            }
+        })
+        .catch(() => { btn.disabled = false; });
+}
+
+function respondRequest(requestId, action, btn) {
+    btn.disabled = true;
+    fetch(`/friend-request/${requestId}/${action}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const container = btn.closest(".friend-actions");
+                if (action === "accept") {
+                    container.outerHTML = `
+                        <button class="friend-btn unfriend"
+                                onmouseenter="this.textContent='❌ Unfriend'"
+                                onmouseleave="this.textContent='✅ Friends'"
+                                onclick="unfriend('{{ profile_user.username }}', this)">
+                            ✅ Friends
+                        </button>`;
+                } else {
+                    container.outerHTML = `
+                        <button class="friend-btn add"
+                                onclick="sendFriendRequest('{{ profile_user.username }}', this)">
+                            ➕ Add Friend
+                        </button>`;
+                }
+            } else {
+                btn.disabled = false;
+            }
+        })
+        .catch(() => { btn.disabled = false; });
+}
+
+function unfriend(username, btn) {
+    if (!confirm(`Remove ${username} as a friend?`)) return;
+    btn.disabled = true;
+    fetch(`/unfriend/${username}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.outerHTML = `
+                    <button class="friend-btn add"
+                            onclick="sendFriendRequest('${username}', this)">
+                        ➕ Add Friend
+                    </button>`;
+            } else {
+                btn.disabled = false;
+            }
+        })
+        .catch(() => { btn.disabled = false; });
+}
+</script>
+
+<style>
+.friend-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    transition: opacity 0.2s, background 0.2s;
+}
+.friend-btn:disabled { opacity: 0.6; cursor: default; }
+.friend-btn.add      { background: #4f7df3; color: #fff; }
+.friend-btn.add:hover { opacity: 0.85; }
+.friend-btn.pending  { background: #e0e0e0; color: #555; }
+.friend-btn.unfriend { background: #d4edda; color: #2d6a4f; min-width: 120px; }
+.friend-btn.unfriend:hover { background: #f8d7da; color: #842029; }
+.friend-btn.accept   { background: #28a745; color: #fff; margin-left: 8px; }
+.friend-btn.decline  { background: #dc3545; color: #fff; margin-left: 8px; }
+.friend-actions      { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+</style>
+{% endblock %}

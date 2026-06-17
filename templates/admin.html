@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Admin Panel{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Admin Panel</h1>
+    <p>Manage users, clubs, and content</p>
+</div>
+
+<div class="admin-section">
+    <h2>Create Club Account</h2>
+    <div class="admin-form">
+        <input type="text" id="club-username" placeholder="Club username">
+        <input type="password" id="club-password" placeholder="Password">
+        <button onclick="createClub()">Create Club</button>
+        <span id="club-msg" class="admin-msg"></span>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h2>Users</h2>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Admin</th>
+                <th>Club</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr id="user-row-{{ u.id }}">
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ '✅' if u.is_admin else '—' }}</td>
+                <td>{{ '✅' if u.is_club else '—' }}</td>
+                <td id="ban-status-{{ u.id }}">{{ '🔴 Banned' if u.is_banned else '🟢 Active' }}</td>
+                <td>
+                    {% if not u.is_admin %}
+                        {% if u.is_banned %}
+                        <button onclick="unbanUser({{ u.id }})">Unban</button>
+                        {% else %}
+                        <button class="ban-btn" onclick="banUser({{ u.id }})">Ban</button>
+                        {% endif %}
+                    {% else %}
+                    <span style="color:var(--text-3)">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-section">
+    <h2>Hidden Posts</h2>
+    {% if hidden_posts %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Author</th>
+                <th>Content</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in hidden_posts %}
+            <tr id="hidden-post-row-{{ post.id }}">
+                <td>{{ post.id }}</td>
+                <td>{{ post.author_name }}</td>
+                <td>{{ post.content[:80] }}{% if post.content|length > 80 %}…{% endif %}</td>
+                <td><button onclick="restorePost({{ post.id }})">Restore</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text-3);font-size:14px;">No hidden posts.</p>
+    {% endif %}
+</div>
+
+<script>
+function createClub() {
+    const username = document.getElementById('club-username').value.trim();
+    const password = document.getElementById('club-password').value.trim();
+    const msg = document.getElementById('club-msg');
+    const form = new FormData();
+    form.append('username', username);
+    form.append('password', password);
+
+    fetch('/admin/create-club', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                msg.textContent = '✅ Club "' + data.username + '" created!';
+                msg.style.color = 'var(--success)';
+                document.getElementById('club-username').value = '';
+                document.getElementById('club-password').value = '';
+            } else {
+                msg.textContent = '❌ ' + data.error;
+                msg.style.color = 'var(--danger)';
+            }
+        });
+}
+
+function banUser(userId) {
+    if (!confirm('Ban this user and hide all their posts?')) return;
+    fetch(`/admin/ban/${userId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('ban-status-' + userId).textContent = '🔴 Banned';
+                const btn = document.querySelector(`#user-row-${userId} button`);
+                btn.textContent = 'Unban';
+                btn.className = '';
+                btn.onclick = () => unbanUser(userId);
+            }
+        });
+}
+
+function unbanUser(userId) {
+    fetch(`/admin/unban/${userId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('ban-status-' + userId).textContent = '🟢 Active';
+                const btn = document.querySelector(`#user-row-${userId} button`);
+                btn.textContent = 'Ban';
+                btn.className = 'ban-btn';
+                btn.onclick = () => banUser(userId);
+            }
+        });
+}
+
+function restorePost(postId) {
+    fetch(`/admin/restore-post/${postId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('hidden-post-row-' + postId).remove();
+            }
+        });
+}
+</script>
+{% endblock %}

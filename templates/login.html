@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahabat — Log In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-logo">
+            <div class="logo-mark-large">S</div>
+            <h1>Sahabat</h1>
+            <p class="tagline">Connect with your campus community</p>
+        </div>
+
+        {% if error %}
+        <p class="error-msg">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="text" name="username" placeholder="Username" autocomplete="username" required>
+            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+            <button type="submit">Log In</button>
+        </form>
+
+        <p class="hint">Demo: <b>demo</b> / <b>password123</b></p>
+        <p class="hint">Demo: <b>admin_demo</b> / <b>adminpass123</b></p>
+        <p class="signup-link">New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+    </div>
+
+    <script>
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+    </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Notifications{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Notifications</h1>
+    <p>Your matches, likes, and comments</p>
+</div>
+
+<!-- FRIEND REQUESTS -->
+<div class="notif-section">
+    <h2 class="notif-section-label">👥 Friend Requests</h2>
+    {% if friend_request_notifs %}
+        {% for notif in friend_request_notifs %}
+        <div class="notif-item {% if not notif.seen %}notif-unread{% endif %}">
+            <div class="notif-item-left">
+                <span class="notif-icon">{{ '✅' if notif.notif_type == 'accepted' else '👤' }}</span>
+                <span>
+                    <a href="{{ url_for('profile_page', username=notif.from_user) }}">{{ notif.from_user }}</a>
+                    {% if notif.notif_type == 'accepted' %}
+                        accepted your friend request
+                    {% else %}
+                        sent you a friend request
+                    {% endif %}
+                </span>
+            </div>
+            <span class="notif-time">{{ notif.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="placeholder-text notif-empty">No friend requests yet.</p>
+    {% endif %}
+</div>
+
+<!-- MATCHES -->
+<div class="notif-section">
+    <h2 class="notif-section-label">💞 Matches</h2>
+    {% if matches %}
+        {% for match in matches %}
+        {% set other = match.user_b if match.user_a == username else match.user_a %}
+        <div class="notif-item match-item">
+            <div class="notif-item-left">
+                <span class="notif-icon">🎉</span>
+                <span>You and <a href="{{ url_for('profile_page', username=other) }}">{{ other }}</a> matched!</span>
+            </div>
+            <span class="notif-time">{{ match.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="placeholder-text notif-empty">No matches yet — keep exploring!</p>
+    {% endif %}
+</div>
+
+<!-- LIKES -->
+<div class="notif-section">
+    <h2 class="notif-section-label">♥ Likes</h2>
+    {% if likes %}
+        {% for like in likes %}
+        <div class="notif-item {% if not like.seen %}notif-unread{% endif %}">
+            <div class="notif-item-left">
+                <span class="notif-icon">♥</span>
+                <span><a href="{{ url_for('profile_page', username=like.from_user) }}">{{ like.from_user }}</a> liked your profile</span>
+            </div>
+            <span class="notif-time">{{ like.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="placeholder-text notif-empty">No likes yet.</p>
+    {% endif %}
+</div>
+
+<!-- COMMENTS -->
+<div class="notif-section">
+    <h2 class="notif-section-label">💬 Comments on your posts</h2>
+    {% if comment_notifs %}
+        {% for notif in comment_notifs %}
+        <a href="{{ url_for('post_detail', post_id=notif.post_id) }}" class="notif-item-link">
+        <div class="notif-item {% if not notif.seen %}notif-unread{% endif %}">
+            <div class="notif-item-left">
+                <span class="notif-icon">💬</span>
+                <div class="notif-comment-body">
+                    <span><strong>{{ notif.commenter }}</strong> commented on your post</span>
+                    <span class="notif-comment-preview">"{{ notif.comment_content }}"</span>
+                </div>
+            </div>
+            <span class="notif-time">{{ notif.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        </a>
+        {% endfor %}
+    {% else %}
+    <p class="placeholder-text notif-empty">No comments on your posts yet.</p>
+    {% endif %}
+</div>
+
+<!-- POST LIKES -->
+<div class="notif-section">
+    <h2 class="notif-section-label">❤️ Post Likes</h2>
+    {% if like_notifs %}
+        {% for notif in like_notifs %}
+        <a href="{{ url_for('post_detail', post_id=notif.post_id) }}" class="notif-item-link">
+        <div class="notif-item {% if not notif.seen %}notif-unread{% endif %}">
+            <div class="notif-item-left">
+                <span class="notif-icon">❤️</span>
+                <span><strong>{{ notif.liker }}</strong> liked your post</span>
+            </div>
+            <span class="notif-time">{{ notif.created_at.strftime('%d %b, %H:%M') }}</span>
+        </div>
+        </a>
+        {% endfor %}
+    {% else %}
+    <p class="placeholder-text notif-empty">No post likes yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

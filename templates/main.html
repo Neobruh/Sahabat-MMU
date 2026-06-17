@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Feed{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Feed</h1>
+    <p>What's happening on campus</p>
+</div>
+
+<div class="create-post-box">
+    <form method="POST" action="{{ url_for('create_post') }}" enctype="multipart/form-data">
+        <textarea name="content" placeholder="Share something with your campus…" required></textarea>
+        <div class="create-post-actions">
+            <div class="upload-area" id="uploadArea">
+                📎 Attach an image
+                <input type="file" name="image" id="imageInput" accept="image/*">
+            </div>
+            <button type="submit">Post</button>
+        </div>
+    </form>
+</div>
+
+{# ── Filter pills ── #}
+<div class="feed-filters">
+    <a href="{{ url_for('main_page', sort='recent') }}"
+       class="filter-pill {% if sort == 'recent' %}active{% endif %}">🕐 Most Recent</a>
+    <a href="{{ url_for('main_page', sort='popular-yearly') }}"
+       class="filter-pill {% if sort == 'popular-yearly' %}active{% endif %}">🔥 This Year</a>
+    <a href="{{ url_for('main_page', sort='popular-monthly') }}"
+       class="filter-pill {% if sort == 'popular-monthly' %}active{% endif %}">📅 This Month</a>
+    <a href="{{ url_for('main_page', sort='popular-daily') }}"
+       class="filter-pill {% if sort == 'popular-daily' %}active{% endif %}">⚡ Today</a>
+</div>
+
+<div class="post-feed">
+    {% for post in posts %}
+        {% include "_post_card.html" %}
+    {% else %}
+        <p style="color:var(--text-2);text-align:center;padding:32px 0;">No posts yet for this filter.</p>
+    {% endfor %}
+</div>
+
+{# ── Pagination ── #}
+{% if pagination.pages > 1 %}
+<div class="pagination">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('main_page', sort=sort, page=pagination.prev_num) }}" class="page-btn">← Prev</a>
+    {% endif %}
+
+    <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+
+    {% if pagination.has_next %}
+    <a href="{{ url_for('main_page', sort=sort, page=pagination.next_num) }}" class="page-btn">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const imageInput = document.getElementById('imageInput');
+
+imageInput.addEventListener('change', () => {
+    if (imageInput.files.length > 0) {
+        uploadArea.textContent = '✅ ' + imageInput.files[0].name;
+        uploadArea.classList.add('has-file');
+        uploadArea.appendChild(imageInput);
+    }
+});
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        imageInput.files = dt.files;
+        uploadArea.textContent = '✅ ' + file.name;
+        uploadArea.classList.add('has-file');
+        uploadArea.appendChild(imageInput);
+    }
+});
+</script>
+{% endblock %}

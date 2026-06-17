@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sahabat — Settings{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <h1>Settings</h1>
+    <p>Manage your account preferences</p>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+    <p class="success-msg">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('settings_page') }}" class="settings-form">
+    <label for="new_password">New Password</label>
+    <input type="password" id="new_password" name="new_password" placeholder="Enter a new password">
+    <button type="submit">Save Changes</button>
+</form>
+{% endblock %}
