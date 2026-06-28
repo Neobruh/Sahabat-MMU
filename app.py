@@ -6,6 +6,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit, join_room
 
+from dotenv import load_dotenv
+
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -29,7 +31,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 UPLOAD_FOLDER = os.path.join("static", "images", "uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1515933277024944160/c_XRcANTppYag8ligCOwsE3wlm4YzfAzHkqKR7gSF1XOJnAjmmhSADkWiX3NUXaDr9q0"
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
 
 # =============================================================
 # DATABASE MODELS

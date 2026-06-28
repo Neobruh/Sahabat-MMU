@@ -5,3 +5,4 @@ Werkzeug>=3.0
 requests>=2.31
 eventlet>=0.35
 Faker==25.8.0
+python-dotenv>=1.0
