@@ -256,6 +256,14 @@ def login_required_redirect():
 
 def save_uploaded_image(file):
     if file and file.filename and allowed_file(file.filename):
+        # Check file size (max 10MB for Cloudinary free tier)
+        file.seek(0, 2)  # Seek to end
+        size = file.tell()
+        file.seek(0)     # Reset to start
+        
+        if size > 10 * 1024 * 1024:  # 10MB limit
+            return None  # Skip upload silently
+        
         result = cloudinary.uploader.upload(file)
         return result["secure_url"]
     return None
