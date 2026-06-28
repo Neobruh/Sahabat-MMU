@@ -1351,71 +1351,14 @@ def restore_post(post_id):
 # =============================================================
 
 def init_db():
-    """Create tables and seed with demo data if empty."""
     db.create_all()
-
-    if User.query.first() is not None:
-        return  # Already seeded
-
-    # --- Seed users ---
-    demo = User(
-        username    = "demo",
-        bio         = "Just a demo student exploring Sahabat.",
-        profile_pic = "/static/images/profile-placeholder.png",
-        interests   = "music, coding, hiking"
-    )
-    demo.set_password("password123")
-
-    aisyah = User(username="Aisyah", profile_pic="/static/images/profile-placeholder.png", interests="running, music")
-    aisyah.set_password("password123")
-
-    daniel = User(username="Daniel", profile_pic="/static/images/profile-placeholder.png", interests="coding, hiking")
-    daniel.set_password("password123")
-
-    photo_club = User(username="Photography Club", profile_pic="/static/images/profile-placeholder.png",
-                      interests="photography", is_club=True)
-    photo_club.set_password("password123")
-
-    debate_club = User(username="Debate Society", profile_pic="/static/images/profile-placeholder.png",
-                       interests="debate", is_club=True)
-    debate_club.set_password("password123")
-
-    db.session.add_all([demo, aisyah, daniel, photo_club, debate_club])
-    db.session.commit()
-
-    # --- Seed posts ---
-    posts = [
-        Post(type="main", author_id=aisyah.id, author_name="Aisyah",
-             content="Anyone joining the campus run this weekend?",
-             image_url="/static/images/post-placeholder.jpg"),
-        Post(type="main", author_id=daniel.id, author_name="Daniel",
-             content="Lost my student ID near the library, please help!",
-             image_url=None),
-        Post(type="club", author_id=photo_club.id, author_name="Photography Club",
-             content="Photo walk this Saturday, 4PM at the lake.",
-             image_url="/static/images/post-placeholder.jpg"),
-        Post(type="club", author_id=debate_club.id, author_name="Debate Society",
-             content="Sign-ups for the inter-uni debate are open!",
-             image_url=None),
-    ]
-    db.session.add_all(posts)
-    db.session.commit()
-
-    # --- Seed likes & comments ---
-    db.session.add(Like(post_id=posts[0].id, username="Daniel"))
-    db.session.add(Like(post_id=posts[2].id, username="Aisyah"))
-    db.session.add(Like(post_id=posts[2].id, username="Daniel"))
-    db.session.add(Comment(post_id=posts[0].id, username="Daniel", content="I'm in!"))
-    db.session.add(Comment(post_id=posts[2].id, username="Aisyah", content="Can't wait!"))
-    db.session.commit()
-
 
 # =============================================================
 # ENTRY POINT
 # =============================================================
 with app.app_context():
     init_db()
-    
+
 if __name__ == "__main__":
     with app.app_context():
         init_db()
