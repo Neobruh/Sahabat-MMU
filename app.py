@@ -16,18 +16,22 @@ import os
 import random
 import requests
 
+load_dotenv()
+
 # =============================================================
 # CONFIGURATION
 # =============================================================
 
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 app.secret_key = "SAHABATMMU_26_MINIIT"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sahabat.db"
+database_url = os.getenv("DATABASE_URL", "sqlite:///sahabat.db")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 
 UPLOAD_FOLDER = os.path.join("static", "images", "uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
