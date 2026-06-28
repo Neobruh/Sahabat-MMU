@@ -1352,6 +1352,11 @@ def restore_post(post_id):
 
 def init_db():
     db.create_all()
+    
+    admin = User.query.filter_by(username="alpintang").first()
+    if admin:
+        admin.is_admin = True
+        db.session.commit()
 
 # =============================================================
 # ENTRY POINT
