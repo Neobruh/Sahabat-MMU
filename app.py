@@ -21,7 +21,7 @@ import requests
 # =============================================================
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 app.secret_key = "SAHABATMMU_26_MINIIT"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sahabat.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
