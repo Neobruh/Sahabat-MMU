@@ -1091,7 +1091,7 @@ def profile_page(username):
         return redir
 
     user      = User.query.filter_by(username=username).first_or_404()
-    posts     = Post.query.filter_by(author_id=user.id).order_by(Post.created_at.desc()).all()
+    posts     = Post.query.filter_by(author_id=user.id, is_visible=True).order_by(Post.created_at.desc()).all()
     all_clubs = User.query.filter_by(is_club=True).all()
     viewer    = current_user()
 
