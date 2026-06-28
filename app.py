@@ -6,6 +6,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit, join_room
 
+import cloudinary
+import cloudinary.uploader
+
 from dotenv import load_dotenv
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -36,6 +39,12 @@ socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 UPLOAD_FOLDER = os.path.join("static", "images", "uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
+
+cloudinary.config(
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key    = os.getenv("CLOUDINARY_API_KEY"),
+    api_secret = os.getenv("CLOUDINARY_API_SECRET")
+)
 
 # =============================================================
 # DATABASE MODELS
@@ -247,10 +256,8 @@ def login_required_redirect():
 
 def save_uploaded_image(file):
     if file and file.filename and allowed_file(file.filename):
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(UPLOAD_FOLDER, filename))
-        return f"/static/images/uploads/{filename}"
+        result = cloudinary.uploader.upload(file)
+        return result["secure_url"]
     return None
 
 def get_friends(username):
@@ -1352,7 +1359,7 @@ def restore_post(post_id):
 
 def init_db():
     db.create_all()
-    
+
     admin = User.query.filter_by(username="alpintang").first()
     if admin:
         admin.is_admin = True
