@@ -573,17 +573,24 @@ def club_page():
 
 @app.route("/club/post/create", methods=["POST"])
 def create_club_post():
-    """Create a new club post. Only club accounts can post here."""
     redir = login_required_redirect()
     if redir:
         return redir
 
     user = current_user()
+    
+    # Debug logging
+    import logging
+    logging.warning(f"Club post attempt by: {user.username}, is_club: {user.is_club}")
+    
     if not user.is_club:
+        logging.warning(f"User {user.username} is not a club, redirecting")
         return redirect(url_for("club_page"))
 
     content   = request.form.get("content", "").strip()
     image_url = save_uploaded_image(request.files.get("image"))
+
+    logging.warning(f"Content: {content}, Image: {image_url}")
 
     if content:
         db.session.add(Post(
@@ -594,6 +601,7 @@ def create_club_post():
             image_url   = image_url
         ))
         db.session.commit()
+        logging.warning("Post committed successfully")
 
     return redirect(url_for("club_page"))
 
