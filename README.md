@@ -99,6 +99,8 @@ pip show eventlet
 
 - [Flask](https://flask.palletsprojects.com/) — web framework
 - [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/) — database ORM
+- [PostgreSQL](https://www.postgresql.org) — relational database
 - [Flask-SocketIO](https://flask-socketio.readthedocs.io/) — real-time messaging
 - [Werkzeug](https://werkzeug.palletsprojects.com/) — password hashing and file uploads
 - [Socket.IO](https://socket.io/) — WebSocket client (browser)
+- [Cloudinary](https://cloudinary.com) — image storage and delivery
