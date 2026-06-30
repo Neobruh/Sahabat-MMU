@@ -90,7 +90,7 @@ python app.py --port 5001
 **WebSocket not connecting**
 Make sure `eventlet` installed correctly. You can verify with:
 ```bash
-pip show eventlet
+python -m pip show eventlet
 ```
 
 ---
